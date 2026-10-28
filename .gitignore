@@ -6,3 +6,10 @@ out
 .env*.local
 *.tsbuildinfo
 .vercel
+
+# Local copy of the Vercel keys — never upload
+vercel-keys.env
+*.env
+API Key.txt
+*key*.txt
+*Key*.txt

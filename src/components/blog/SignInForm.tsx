@@ -21,7 +21,7 @@ export function SignInForm({ next = "/", compact = false }: { next?: string; com
       email,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
-    if (error) { setState("error"); setMsg(error.message.includes("rate") ? "Too many requests — please wait a minute." : "Couldn’t send the link. Please try again."); return; }
+    if (error) { setState("error"); setMsg(error.message.toLowerCase().includes("rate") ? "Too many requests — please wait a minute and try again." : `Couldn’t send the link: ${error.message}`); return; }
     setState("sent");
   }
 
