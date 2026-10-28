@@ -1,6 +1,7 @@
 /** Centralized env access. Public values may be exposed to the browser; secrets must only be read on the server. */
 export const publicEnv = {
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  // Accepts the URL with or without a trailing slash or "/rest/v1" — only the project origin is used.
+  supabaseUrl: (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim().replace(/\/(rest|auth)\/v1\/?$/i, "").replace(/\/+$/, ""),
   supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
 };
 
