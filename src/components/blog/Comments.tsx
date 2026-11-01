@@ -10,6 +10,9 @@ import { fetchLikes, type LikeState } from "@/lib/likes-client";
 import { cn } from "@/lib/utils";
 
 type Me = { email?: string; displayName: string; isAdmin: boolean } | null;
+/** Who is writing: a signed-in account or a guest with just a name. */
+type Who = { name: string; canPost: boolean; signedIn: boolean; guestName?: string; onName: (n: string) => void };
+const NAME_KEY = "mj-comment-name";
 type Notice = { kind: "ok" | "error"; text: string } | null;
 
 async function api(url: string, init?: RequestInit) {
@@ -21,7 +24,7 @@ async function api(url: string, init?: RequestInit) {
 
 const SHOW_REPLIES = 2;
 
-/** Readers pick a display name once; it is saved to their profile in the database and used on every comment. */
+/** Readers pick a display name once. Signed-in: saved to their profile. Guests: remembered in this browser and applied to their past comments. */
 function NameSetup({ initial = "", onSaved, onCancel }: { initial?: string; onSaved: (name: string) => void; onCancel?: () => void }) {
   const [name, setName] = useState(initial);
   const [busy, setBusy] = useState(false);
@@ -33,10 +36,11 @@ function NameSetup({ initial = "", onSaved, onCancel }: { initial?: string; onSa
   };
   return (
     <form onSubmit={save} className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
-      <label htmlFor="display-name" className="text-sm text-mist-200">Your display name <span className="text-mist-500">— shown on all your comments and replies</span></label>
+      <label htmlFor="display-name" className="text-sm font-medium text-mist-100">Join the discussion</label>
+      <p className="mt-0.5 text-xs text-mist-400">No account needed — just enter the name you want to show on your comments and replies.</p>
       <div className="mt-2 flex flex-wrap gap-2">
         <input id="display-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} className="input max-w-xs py-2 text-sm" placeholder="e.g. Alex Chen" autoComplete="name" />
-        <button className="btn-primary py-2 text-sm" disabled={busy || name.trim().length < 2}>Save name</button>
+        <button className="btn-primary py-2 text-sm" disabled={busy || name.trim().length < 2}>{initial ? "Save name" : "Continue"}</button>
         {onCancel && <button type="button" className="btn-ghost py-2 text-sm" onClick={onCancel}>Cancel</button>}
       </div>
       {err && <p role="alert" className="mt-1 text-xs text-rose-300">{err}</p>}
@@ -45,14 +49,14 @@ function NameSetup({ initial = "", onSaved, onCancel }: { initial?: string; onSa
 }
 
 /** One top-level comment with its replies and an inline reply box (social-media style). */
-function Thread({ c, replies, slug, me, refresh, notify, likes }: { c: CommentDTO; replies: CommentDTO[]; slug: string; me: Me; refresh: () => void; notify: (n: Notice) => void; likes: LikeState | null }) {
+function Thread({ c, replies, slug, me, who, refresh, notify, likes }: { c: CommentDTO; replies: CommentDTO[]; slug: string; me: Me; who: Who; refresh: () => void; notify: (n: Notice) => void; likes: LikeState | null }) {
   const [replyTo, setReplyTo] = useState<CommentDTO | null>(null);
   const [open, setOpen] = useState(false);
   const hidden = Math.max(0, replies.length - SHOW_REPLIES);
   const shown = open ? replies : replies.slice(-SHOW_REPLIES);
 
   const post = async (text: string) => {
-    const data = await api("/api/comments", { method: "POST", body: JSON.stringify({ postSlug: slug, parentId: c.id, body: text, website: "" }) });
+    const data = await api("/api/comments", { method: "POST", body: JSON.stringify({ postSlug: slug, parentId: c.id, authorName: who.guestName, body: text, website: "" }) });
     setReplyTo(null); setOpen(true);
     notify(data.status === "pending" ? { kind: "ok", text: "Thanks! Your reply is awaiting moderation." } : null);
     refresh();
@@ -60,23 +64,24 @@ function Thread({ c, replies, slug, me, refresh, notify, likes }: { c: CommentDT
 
   return (
     <li>
-      <Item c={c} me={me} likes={likes} refresh={refresh} notify={notify} onReply={() => setReplyTo(c)} />
+      <Item c={c} me={me} who={who} likes={likes} refresh={refresh} notify={notify} onReply={() => setReplyTo(c)} />
       {(replies.length > 0 || replyTo) && (
         <div className="ml-[2.95rem] mt-2 space-y-3 border-l border-white/10 pl-3">
           <MoreReplies count={hidden} open={open} onClick={() => setOpen((o) => !o)} />
-          {shown.map((r) => <Item key={r.id} c={r} me={me} likes={likes} refresh={refresh} notify={notify} small onReply={() => setReplyTo(r)} />)}
-          {replyTo && me?.displayName && (
-            <InlineComposer key={replyTo.id} size="sm" name={me.displayName} autoFocus replyingTo={replyTo.authorName}
+          {shown.map((r) => <Item key={r.id} c={r} me={me} who={who} likes={likes} refresh={refresh} notify={notify} small onReply={() => setReplyTo(r)} />)}
+          {replyTo && who.canPost && (
+            <InlineComposer key={replyTo.id} size="sm" name={who.name} autoFocus replyingTo={replyTo.authorName}
               initial={replyTo.id !== c.id ? `@${replyTo.authorName} ` : ""} placeholder={`Reply to ${replyTo.authorName}…`}
               onCancel={() => setReplyTo(null)} onSubmit={post} />
           )}
+          {replyTo && !who.canPost && <NameSetup onCancel={() => setReplyTo(null)} onSaved={who.onName} />}
         </div>
       )}
     </li>
   );
 }
 
-function Item({ c, me, likes, refresh, notify, small, onReply }: { c: CommentDTO; me: Me; likes: LikeState | null; refresh: () => void; notify: (n: Notice) => void; small?: boolean; onReply: () => void }) {
+function Item({ c, me, who, likes, refresh, notify, small, onReply }: { c: CommentDTO; me: Me; who: Who; likes: LikeState | null; refresh: () => void; notify: (n: Notice) => void; small?: boolean; onReply: () => void }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(c.body);
   const [busy, setBusy] = useState(false);
@@ -104,7 +109,7 @@ function Item({ c, me, likes, refresh, notify, small, onReply }: { c: CommentDTO
       ) : <MentionText text={c.body} />}
       actions={<>
         {likes?.configured && c.status === "visible" && <LikeButton bare type="comment" id={c.id} initial={{ count: likes.counts[c.id] ?? 0, liked: likes.mine.includes(c.id) }} />}
-        {me?.displayName && c.status === "visible" && <button className={actionBtn} onClick={onReply}>Reply</button>}
+        {c.status === "visible" && <button className={actionBtn} onClick={onReply}>Reply</button>}
         {c.mine && !editing && <button className={actionBtn} onClick={() => setEditing(true)}>Edit</button>}
         {c.mine && <button className={cn(actionBtn, "hover:text-rose-300")} disabled={busy} onClick={() => { if (window.confirm("Delete this comment?")) run(() => api(`/api/comments/${c.id}`, { method: "DELETE" }), "Comment deleted."); }}>Delete</button>}
         {me && !c.mine && <button className={actionBtn} onClick={() => { const reason = window.prompt("Why are you reporting this comment? (spam, abuse, off-topic…)"); if (reason && reason.trim().length >= 3) run(() => api(`/api/comments/${c.id}/report`, { method: "POST", body: JSON.stringify({ reason }) }), "Thanks — a moderator will review it."); }}>Report</button>}
@@ -114,7 +119,9 @@ function Item({ c, me, likes, refresh, notify, small, onReply }: { c: CommentDTO
 }
 
 export function Comments({ slug, title = "Discussion", compact = false }: { slug: string; title?: string; compact?: boolean }) {
-  const [state, setState] = useState<{ loading: boolean; configured: boolean; comments: CommentDTO[]; me: Me; error: string }>({ loading: true, configured: true, comments: [], me: null, error: "" });
+  const [state, setState] = useState<{ loading: boolean; configured: boolean; guests: boolean; comments: CommentDTO[]; me: Me; error: string }>({ loading: true, configured: true, guests: false, comments: [], me: null, error: "" });
+  const [guestName, setGuestName] = useState("");
+  useEffect(() => { try { setGuestName(localStorage.getItem(NAME_KEY) || ""); } catch { /* storage blocked */ } }, []);
   const [notice, setNotice] = useState<Notice>(null);
   const [likes, setLikes] = useState<LikeState | null>(null);
   const [renaming, setRenaming] = useState(false);
@@ -122,7 +129,7 @@ export function Comments({ slug, title = "Discussion", compact = false }: { slug
   const load = useCallback(async () => {
     try {
       const data = await api(`/api/comments?slug=${encodeURIComponent(slug)}`);
-      setState({ loading: false, configured: data.configured, comments: data.comments, me: data.user, error: "" });
+      setState({ loading: false, configured: data.configured, guests: !!data.guests, comments: data.comments, me: data.user, error: "" });
       fetchLikes("comment", (data.comments as CommentDTO[]).filter((c) => !c.deleted).map((c) => c.id)).then(setLikes).catch(() => {});
     } catch (e) {
       setState((s) => ({ ...s, loading: false, error: (e as Error).message }));
@@ -143,8 +150,13 @@ export function Comments({ slug, title = "Discussion", compact = false }: { slug
     return { roots: visibleRoots, byParent, count: state.comments.filter((c) => !c.deleted).length };
   }, [state.comments]);
 
+  const who: Who = state.me
+    ? { name: state.me.displayName, canPost: !!state.me.displayName, signedIn: true, onName: () => load() }
+    : { name: guestName, canPost: state.guests && !!guestName, signedIn: false, guestName, onName: (n) => { saveGuestName(n); load(); } };
+  function saveGuestName(n: string) { setGuestName(n); try { localStorage.setItem(NAME_KEY, n); } catch { /* storage blocked */ } }
+
   const postRoot = async (text: string) => {
-    const data = await api("/api/comments", { method: "POST", body: JSON.stringify({ postSlug: slug, parentId: null, body: text, website: "" }) });
+    const data = await api("/api/comments", { method: "POST", body: JSON.stringify({ postSlug: slug, parentId: null, authorName: who.guestName, body: text, website: "" }) });
     if (data.status === "pending") setNotice({ kind: "ok", text: "Thanks! Your comment is awaiting moderation." });
     load();
   };
@@ -157,6 +169,9 @@ export function Comments({ slug, title = "Discussion", compact = false }: { slug
           <MessageSquare className="h-5 w-5 text-cyan-300" aria-hidden /> {title}
           {state.configured && !state.loading && <span className="font-mono text-sm text-mist-500">({count})</span>}
         </h2>
+        {!state.me && who.canPost && (
+          <span className="text-xs text-mist-400">Commenting as <b className="text-mist-200">{guestName}</b> · <button type="button" className="underline-offset-2 hover:underline" onClick={() => setRenaming(true)}>change</button></span>
+        )}
         {state.me && (
           <form action="/auth/signout" method="post" className="flex items-center gap-2 text-xs text-mist-400">
             {state.me.displayName && <span className="hidden sm:inline">Commenting as <b className="text-mist-200">{state.me.displayName}</b>{!state.me.isAdmin && <> · <button type="button" className="underline-offset-2 hover:underline" onClick={() => setRenaming(true)}>change</button></>}</span>}
@@ -180,14 +195,14 @@ export function Comments({ slug, title = "Discussion", compact = false }: { slug
       ) : (
         <>
           <ul className="mt-5 space-y-5">
-            {roots.map((c) => <Thread key={c.id} c={c} replies={byParent.get(c.id) || []} slug={slug} me={state.me} refresh={load} notify={setNotice} likes={likes} />)}
+            {roots.map((c) => <Thread key={c.id} c={c} replies={byParent.get(c.id) || []} slug={slug} me={state.me} who={who} refresh={load} notify={setNotice} likes={likes} />)}
           </ul>
           {roots.length === 0 && <p className="mt-4 text-sm text-mist-500">No comments yet — be the first to say something.</p>}
           <div className="mt-5 border-t border-white/[0.06] pt-4">
-            {state.me && (!state.me.displayName || renaming) ? (
-              <NameSetup initial={state.me.displayName} onCancel={renaming ? () => setRenaming(false) : undefined} onSaved={() => { setRenaming(false); load(); }} />
-            ) : state.me ? (
-              <InlineComposer name={state.me.displayName} placeholder="Write a comment…" onSubmit={postRoot} footer="Enter to post · Shift+Enter for a new line" />
+            {(state.me || state.guests) && (!who.canPost || renaming) ? (
+              <NameSetup initial={who.name} onCancel={renaming ? () => setRenaming(false) : undefined} onSaved={(n) => { if (!state.me) saveGuestName(n); setRenaming(false); load(); }} />
+            ) : who.canPost ? (
+              <InlineComposer name={who.name} placeholder="Write a comment…" onSubmit={postRoot} footer="Enter to post · Shift+Enter for a new line" />
             ) : (
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
                 <p className="mb-3 text-sm text-mist-300">Sign in with your email to like, comment and reply.</p>

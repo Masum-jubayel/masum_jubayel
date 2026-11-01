@@ -14,7 +14,7 @@ export function SocialLinks({ compact = false, showPending = false }: { compact?
     <>
       {items.map(({ label, href, Icon }) =>
         href ? (
-          <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="chip hover:border-cyan-400/40 hover:text-mist-100">
+          <a key={label} href={href} target="_blank" rel="me noopener noreferrer" className="chip hover:border-cyan-400/40 hover:text-mist-100">
             <Icon className="h-3.5 w-3.5" aria-hidden /> {compact ? label : `${label} profile`}
           </a>
         ) : showPending ? (

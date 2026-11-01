@@ -30,7 +30,7 @@ export function SocialButtons({ info, withContact = false, size = "md" }: { info
           <a
             href={href}
             target={href.startsWith("http") ? "_blank" : undefined}
-            rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+            rel={href.startsWith("http") ? "me noopener noreferrer" : undefined}
             aria-label={label}
             title={label}
             className={cn("social-btn group relative grid place-items-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]", box)}

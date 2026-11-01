@@ -2,10 +2,10 @@
 
 import { SeenMotion } from "@/components/ui/SeenMotion";
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Facebook, Link2, Linkedin, MapPin, MessageCircle, MessageSquare, Pin, Share2, Smile, X } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Facebook, Link2, Linkedin, Mail, MapPin, MessageCircle, MessageSquare, Pin, Share2, Smile, X } from "lucide-react";
 import Link from "next/link";
 import type { Memory, PhotoFit, PhotoFocus, PhotoSize } from "@/content/memories";
 import { LikeButton } from "@/components/blog/LikeButton";
@@ -88,15 +88,21 @@ function ShareMenu({ id, text }: { id: string; text: string }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const url = () => `${window.location.origin}${window.location.pathname}#memory-${id}`;
-  const share = async () => {
-    if (typeof navigator !== "undefined" && "share" in navigator) {
-      try { await navigator.share({ title: "Masum Jubayel — Memories", text: text.slice(0, 120), url: url() }); return; } catch { /* cancelled → fall back to menu */ }
-    }
-    setOpen((o) => !o);
-  };
+  // Always our own menu (same on every device); the system share sheet is offered as the last option.
+  const share = () => setOpen((o) => !o);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", close); document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  const canNative = typeof navigator !== "undefined" && "share" in navigator;
   const enc = (s: string) => encodeURIComponent(s);
+  const item = "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-mist-200 hover:bg-white/5";
   return (
-    <div className="relative">
+    <div className="relative" ref={box}>
       <button type="button" onClick={share} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-sm text-mist-300 transition hover:border-cyan-400/40 hover:text-cyan-200" aria-expanded={open}><Share2 className="h-4 w-4" aria-hidden /> Share</button>
       <AnimatePresence>
         {open && (
@@ -107,6 +113,13 @@ function ShareMenu({ id, text }: { id: string; text: string }) {
             <a className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-mist-200 hover:bg-white/5" target="_blank" rel="noopener noreferrer" href={`https://www.facebook.com/sharer/sharer.php?u=${typeof window !== "undefined" ? enc(url()) : ""}`}><Facebook className="h-4 w-4 text-[#1877f2]" aria-hidden /> Facebook</a>
             <a className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-mist-200 hover:bg-white/5" target="_blank" rel="noopener noreferrer" href={`https://www.linkedin.com/sharing/share-offsite/?url=${typeof window !== "undefined" ? enc(url()) : ""}`}><Linkedin className="h-4 w-4 text-[#0a66c2]" aria-hidden /> LinkedIn</a>
             <a className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-mist-200 hover:bg-white/5" target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${typeof window !== "undefined" ? enc(`${text.slice(0, 100)} ${url()}`) : ""}`}><MessageCircle className="h-4 w-4 text-[#25d366]" aria-hidden /> WhatsApp</a>
+            <a className={item} target="_blank" rel="noopener noreferrer" href={`https://twitter.com/intent/tweet?text=${typeof window !== "undefined" ? enc(text.slice(0, 120)) : ""}&url=${typeof window !== "undefined" ? enc(url()) : ""}`}><span className="grid h-4 w-4 place-items-center text-[13px] font-bold leading-none" aria-hidden>𝕏</span> X (Twitter)</a>
+            <a className={item} href={`mailto:?subject=${enc("Masum Jubayel — Memories")}&body=${typeof window !== "undefined" ? enc(`${text.slice(0, 160)}\n\n${url()}`) : ""}`}><Mail className="h-4 w-4 text-amber-300" aria-hidden /> Email</a>
+            {canNative && (
+              <button type="button" className={`${item} border-t border-white/10 mt-1 pt-2.5`} onClick={async () => { try { await navigator.share({ title: "Masum Jubayel — Memories", text: text.slice(0, 120), url: url() }); } catch { /* cancelled */ } setOpen(false); }}>
+                <Share2 className="h-4 w-4 text-mist-400" aria-hidden /> More apps…
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

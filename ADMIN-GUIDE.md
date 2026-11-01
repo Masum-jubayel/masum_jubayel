@@ -17,10 +17,12 @@ There is no public "Admin" button. Use any of these:
 
 If you are not signed in you are sent to the sign-in page: enter your email, click the magic link, and you land back in the admin.
 
-## Names on comments
+## Comments and names
 
-- Your name on comments and replies comes from your profile in the database (`profiles.display_name`, set by the SQL file) and shows an **Author** badge.
-- Readers choose a display name once, the first time they comment; it is saved to their profile and used on all their comments (they can change it with “change”, and old comments update too).
+- **Visitors don't need an account.** They type a name once (remembered in their browser), then comment, reply and like. They can edit or delete their own comments and change their name (their older comments update too).
+- Names containing “Masum”, “Jubayel”, “admin”, “moderator” or “author” are blocked for visitors, so nobody can pose as you.
+- **You** comment while signed in: your name comes from your profile in the database and shows an **Author ✓** badge.
+- Spam protection: hidden honeypot field, link/word filter, 3 comments per minute and 20 per hour per visitor, duplicate check. Turn on “require approval” in Admin → Settings to approve every comment first.
 
 ## What you can edit
 

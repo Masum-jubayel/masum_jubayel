@@ -9,9 +9,14 @@ export const site = {
   title: "Lead IT Support & Network Administrator",
   positioning: "Network Infrastructure | Web Development & Programming | IT Systems | Cybersecurity",
   location: "Grande Prairie, Alberta, Canada",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  /** Public address. Falls back to Vercel's production domain, then the known live URL — never localhost in production. */
+  url: (process.env.NEXT_PUBLIC_SITE_URL
+    || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "")
+    || (process.env.NODE_ENV === "production" ? "https://masum-jubayel.vercel.app" : "http://localhost:3000")).replace(/\/$/, ""),
   description:
-    "Portfolio of Masum Mohammad Jubayel — Lead IT Support & Network Administrator with hands-on experience in Cisco networking, IT infrastructure, structured cabling and device provisioning, developing a specialization in cybersecurity.",
+    "Masum Mohammad Jubayel (Masum Jubayel) — Lead IT Support & Network Administrator in Grande Prairie, Alberta. Official portfolio: cybersecurity, Cisco networking, web engineering, IT infrastructure and AI automation projects, blog and resume.",
+  /** Other ways people search for the name (used in search-engine data). */
+  alternateNames: ["Masum Jubayel", "Masum M. Jubayel", "Jubayel Masum", "Masum Mohammad"],
 
   hero: {
     headline: "Engineering Networks. Securing the Digital World.",

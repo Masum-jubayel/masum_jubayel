@@ -80,6 +80,7 @@ export function Hero({ info, layout = defaultLayout, scene = defaultScene }: { i
             </div>
           </motion.div>
           <motion.h1 id="hero-title" className="mt-3 text-[2.4rem] font-semibold leading-[1.04] sm:text-6xl xl:text-[4.25rem]">
+            <span className="sr-only">{info.name} — </span>
             {info.headline1.split(" ").map((w, i) => (
               <motion.span key={`${w}-${i}`} className="mr-[0.25em] inline-block" initial={reduce ? false : { opacity: 0, y: 24, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.7, delay: 0.2 + i * 0.12, ease: [0.22, 1, 0.36, 1] }}>{w}</motion.span>
             ))}

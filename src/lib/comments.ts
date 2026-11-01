@@ -10,6 +10,8 @@ export type CommentDTO = {
   mine: boolean;
   /** Written by the site owner (an admin account). */
   isAuthor: boolean;
+  /** Posted by a visitor with just a name (no account). */
+  guest?: boolean;
 };
 
 /** Maps Postgres trigger exceptions to friendly messages. */
