@@ -126,7 +126,7 @@ export default async function Home() {
 {L.homeCta && (<>
       {/* CTA */}
       <section className="container-x py-16">
-        <Parallax speed={24}><CyberCTA title={c.about.ctaTitle} text={c.about.ctaText} /></Parallax>
+        <Parallax speed={24}><CyberCTA title={c.about.ctaTitle} accent={c.about.ctaAccent} text={c.about.ctaText} pillars={c.about.ctaPillars} log={c.about.ctaLog} ai={{ title: c.about.ctaAiTitle, text: c.about.ctaAiText, steps: c.about.ctaAiSteps, guards: c.about.ctaAiGuards }} /></Parallax>
       </section>
 
       </>)}    </>

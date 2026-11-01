@@ -77,6 +77,7 @@ export function FilmStrip({ items }: { items: GalleryItem[] }) {
   const loop = [...list, ...list];
   const holes = <span className="flex justify-between px-1" aria-hidden>{Array.from({ length: 18 }, (_, i) => <span key={i} className="h-1.5 w-2.5 rounded-sm bg-ink-950" />)}</span>;
   return (
+    <div className="overflow-hidden py-2">
     <motion.div className="relative -rotate-1 border-y border-white/10 bg-[#0b0f18] py-1.5 [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)]"
       initial={reduce ? false : { opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, ease }} aria-label="Latest photos and videos">
       <div className={`group flex w-max gap-3 ${reduce ? "" : "animate-[ticker_60s_linear_infinite] hover:[animation-play-state:paused]"}`}>
@@ -95,5 +96,6 @@ export function FilmStrip({ items }: { items: GalleryItem[] }) {
         ))}
       </div>
     </motion.div>
+    </div>
   );
 }

@@ -280,7 +280,6 @@ export function NeuralPortrait({ className, hud: showHud = true, settings = {} }
   return (
     <div className={className}>
       <canvas ref={ref} className={`h-full w-full ${interactive ? "cursor-crosshair touch-pan-y" : ""}`} aria-hidden />
-      {interactive && <p className="pointer-events-none absolute bottom-3 right-3 font-mono text-[9px] uppercase tracking-[0.25em] text-mist-600" aria-hidden>Move to disturb · tap to scatter</p>}
       {showHud && <div className="pointer-events-none absolute left-2 top-2 font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-300/80 sm:left-4 sm:top-4" aria-hidden>
         <p className="flex items-center gap-2"><span className="h-1.5 w-1.5 animate-pulseDot rounded-full bg-cyan-400" />{hud.phase}</p>
         <p className="mt-1 text-mist-500">Nodes {hud.nodes.toLocaleString()} {hud.region ? `· Region ${String(hud.region).padStart(2, "0")}/${String(REGIONS).padStart(2, "0")}` : ""}</p>

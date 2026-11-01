@@ -26,6 +26,7 @@ export const blogCategories = [
   "PoC Radio and Telecommunications",
   "Web Development",
   "Technical Career Development",
+  "AI and Intelligent Agents",
 ] as const;
 
 export type PostMeta = {

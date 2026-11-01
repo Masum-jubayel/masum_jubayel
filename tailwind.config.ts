@@ -6,11 +6,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: { 950: "#03060f", 900: "#060b1a", 850: "#0a1124", 800: "#0d1730", 700: "#142142", 600: "#1d2d57" },
-        cyan: { 300: "#7ef3ff", 400: "#3ee6ff", 500: "#14c8f0", 600: "#0ea2c9" },
-        volt: { 400: "#4f8cff", 500: "#2f6bff", 600: "#2553d6" },
-        violet: { 400: "#a78bfa", 500: "#8b5cf6" },
-        mist: { 100: "#eef4ff", 200: "#cfdbf2", 300: "#a6b6d6", 400: "#7d8db0", 500: "#5b6a8c" },
+        // Theme-aware palettes (values live in globals.css: dark · light · jarvis)
+        white: "rgb(var(--white) / <alpha-value>)",
+        ink: { 950: "rgb(var(--ink-950) / <alpha-value>)", 900: "rgb(var(--ink-900) / <alpha-value>)", 850: "rgb(var(--ink-850) / <alpha-value>)", 800: "rgb(var(--ink-800) / <alpha-value>)", 700: "rgb(var(--ink-700) / <alpha-value>)", 600: "rgb(var(--ink-600) / <alpha-value>)" },
+        cyan: { 300: "rgb(var(--cyan-300) / <alpha-value>)", 400: "rgb(var(--cyan-400) / <alpha-value>)", 500: "rgb(var(--cyan-500) / <alpha-value>)", 600: "rgb(var(--cyan-600) / <alpha-value>)" },
+        volt: { 400: "rgb(var(--volt-400) / <alpha-value>)", 500: "rgb(var(--volt-500) / <alpha-value>)", 600: "rgb(var(--volt-600) / <alpha-value>)" },
+        violet: { 400: "rgb(var(--violet-400) / <alpha-value>)", 500: "rgb(var(--violet-500) / <alpha-value>)" },
+        mist: { 100: "rgb(var(--mist-100) / <alpha-value>)", 200: "rgb(var(--mist-200) / <alpha-value>)", 300: "rgb(var(--mist-300) / <alpha-value>)", 400: "rgb(var(--mist-400) / <alpha-value>)", 500: "rgb(var(--mist-500) / <alpha-value>)" },
       },
       fontFamily: {
         display: ['"Space Grotesk Variable"', "system-ui", "sans-serif"],

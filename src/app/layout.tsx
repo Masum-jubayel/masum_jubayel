@@ -11,6 +11,7 @@ import { Footer } from "@/components/layout/Footer";
 import { site } from "@/lib/site";
 import { getContent } from "@/lib/content";
 import { SiteChrome } from "@/components/layout/SiteChrome";
+import { themeInitScript, type ThemeName } from "@/lib/theme";
 
 const baseMetadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -45,7 +46,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export const viewport: Viewport = { themeColor: "#04070f", colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: "#04070f" };
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -61,7 +62,10 @@ const jsonLd = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const { layout } = await getContent();
   return (
-    <html lang="en" id="top">
+    <html lang="en" id="top" data-theme={layout.defaultTheme || "dark"} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript((layout.defaultTheme as ThemeName) || "dark") }} />
+      </head>
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <div className="ambient-orb a" aria-hidden />

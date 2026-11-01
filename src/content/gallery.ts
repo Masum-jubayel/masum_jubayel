@@ -19,6 +19,15 @@ export type GalleryItem = {
 export const galleryCategories = ["Profile", "Academic", "Professional", "Infrastructure", "Labs", "Projects", "Diagrams", "Achievements", "Brand"] as const;
 
 export const gallery: GalleryItem[] = [
+  { id: "proj-jarvis", title: "Jarvis — personal AI agent", caption: "Illustration of my AI agent's HUD interface: plan, act with tools, check, confirm.", category: "Projects", kind: "illustration", src: "/images/projects/jarvis-ai-agent.jpg", featured: true },
+  { id: "proj-poc-ops", title: "POC Ops Center — Command Overview", caption: "217 companies · 2,667 devices · 2,951 SIMs in one HUD dashboard: match gauge, key numbers, idle-SIM cost and licence alerts.", category: "Projects", kind: "photo", src: "/images/projects/poc-ops-center-overview.jpg", featured: true },
+  { id: "proj-poc-sim", title: "POC & SIM Operations Center", caption: "Illustration of the radio and SIM matching dashboard (customer data removed).", category: "Projects", kind: "illustration", src: "/images/projects/poc-sim-operations-center.jpg", featured: true },
+  { id: "proj-install-board", title: "Install Board — appointment booking", caption: "Illustration of the live installer week view (names removed).", category: "Projects", kind: "illustration", src: "/images/projects/install-board.jpg" },
+  { id: "proj-bc680", title: "BC680 body-cam backup — project site", caption: "Hash-verified, three-copy evidence storage across two offices.", category: "Projects", kind: "photo", src: "/images/projects/bc680-overview.jpg", featured: true },
+  { id: "proj-bc680-guide", title: "BC680 — animated staff guide", caption: "Six chapters with moving diagrams and copyable commands.", category: "Projects", kind: "photo", src: "/images/projects/bc680-guide.jpg" },
+  { id: "proj-emc", title: "Expert Mobile website", caption: "“Everything wireless. Under one roof.” — company site with admin panel.", category: "Projects", kind: "photo", src: "/images/projects/expert-mobile-home.jpg", featured: true },
+  { id: "proj-emc-2", title: "Expert Mobile — solutions & brands", caption: "Solutions, brands and dealer network section.", category: "Projects", kind: "photo", src: "/images/projects/expert-mobile-section.jpg" },
+  { id: "proj-portfolio-jarvis", title: "This portfolio — Jarvis theme", caption: "Next.js + Supabase portfolio with Dark, Light and Jarvis themes.", category: "Projects", kind: "photo", src: "/images/projects/portfolio-jarvis.jpg" },
   { id: "commencement", title: "Fairleigh Dickinson University commencement", caption: "Crossing the stage — M.A.S. in Computer Security and Forensic Administration.", category: "Academic", kind: "photo", src: "/images/gallery/commencement.jpg", featured: true },
   { id: "graduation-portrait", title: "Graduation day", caption: "Master of Administrative Science graduate, Fairleigh Dickinson University (2025).", category: "Academic", kind: "photo", src: "/images/gallery/graduation-portrait.jpg", featured: true },
   { id: "profile", title: "Professional headshot", caption: "Masum Mohammad Jubayel.", category: "Profile", kind: "photo", src: "/images/profile.jpg", featured: true },

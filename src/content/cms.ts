@@ -21,7 +21,8 @@ export type SiteInfo = {
 export type AboutInfo = {
   summary: string; objectives: string[]; achievements: string[]; interests: { title: string; body: string }[];
   focus: { title: string; body: string; tags: string; icon: string; link: string }[];
-  ctaTitle: string; ctaText: string;
+  ctaTitle: string; ctaText: string; ctaPillars: string[]; ctaLog: string[];
+  ctaAccent: string; ctaAiTitle: string; ctaAiText: string; ctaAiSteps: string[]; ctaAiGuards: string[];
   // About page layout & visuals
   portraitImage: string; portraitChips: string[]; portraitRing: boolean; portraitFocus: string; portraitShape: string; showNameCard: boolean;
   statsAuto: boolean; stats: { value: string; label: string }[];
@@ -93,6 +94,7 @@ export type LayoutInfo = {
   seoDescription: string; seoKeywords: string[]; footerNote: string;
   footerPortrait: boolean; footerSocial: boolean; galleryMemories: boolean; galleryArchive: boolean; galleryHero: boolean;
   gHeroImage: string; gHeroInvert: boolean; gNameA: string; gNameB: string; gColorA: string; gColorB: string; gSpeed: string; gDensity: string;
+  defaultTheme: string; themeSwitcher: boolean;
   gInteractive: boolean; gHud: boolean; gStats: boolean; gFilmstrip: boolean; gCta1: string; gCta2: string; gOrbit: boolean;
 };
 
@@ -155,6 +157,7 @@ export const defaultLayout: LayoutInfo = {
   seoDescription: "", seoKeywords: [], footerNote: "",
   footerPortrait: true, footerSocial: true, galleryMemories: true, galleryArchive: true, galleryHero: true,
   gHeroImage: "", gHeroInvert: false, gNameA: "Masum", gNameB: "Jubayel", gColorA: "#22c55e", gColorB: "#ef4444", gSpeed: "normal", gDensity: "normal",
+  defaultTheme: "dark", themeSwitcher: true,
   gInteractive: true, gHud: true, gStats: true, gFilmstrip: true, gCta1: "Enter the gallery", gCta2: "Browse the archive", gOrbit: true,
 };
 
@@ -252,8 +255,25 @@ export const defaultContent: Content = {
     objectivesLabel: "Future objectives", objectivesTitle: "Where I’m headed",
     commencementImage: "/images/gallery/commencement.jpg", commencementCaption: "Commencement — Master of Administrative Science, Computer Security and Forensic Administration, Fairleigh Dickinson University.",
     ctaPrimaryLabel: "Get in touch", ctaPrimaryHref: "/contact", ctaSecondaryLabel: "Explore skills", ctaSecondaryHref: "/skills",
-    ctaTitle: "Building a network team or a security practice?",
-    ctaText: "I’d be glad to talk about network administration, infrastructure, web development and security-focused roles.",
+    ctaTitle: "Securing networks. Building the secure web.",
+    ctaAccent: "Engineering AI automation — governed, auditable and under my control.",
+    ctaText: "I’m open to roles in cybersecurity, network engineering, web engineering and IT infrastructure — where I harden networks, ship secure web systems and deploy AI agents with the same discipline: least privilege, approval gates and a full audit trail.",
+    ctaAiTitle: "AI & Automation · human-in-the-loop",
+    ctaAiText: "I design and run my own AI agent (Jarvis). It plans and executes multi-step work across portals, files and data — but every irreversible action waits for my approval, and every step is logged.",
+    ctaAiSteps: ["Plan|LLM breaks the task into steps", "Retrieve|RAG pulls facts from my own documents", "Act|Scoped tools: browser, files, scripts", "Verify|Results checked against rules", "Approve|Nothing is sent or saved without my sign-off"],
+    ctaAiGuards: ["Least-privilege tools", "Approval gates", "Full action log", "No secrets in prompts"],
+    ctaPillars: [
+      "Cybersecurity|Hardening, access control, forensics mindset",
+      "Networking|Cisco routing & switching, LAN/WAN, VPN",
+      "Web Engineering|Next.js, TypeScript, Python, SQL",
+      "IT Infrastructure|Servers, backups, endpoints, support",
+    ],
+    ctaLog: [
+      "> scanning perimeter ........ 22 · 443 · 8443",
+      "> hardening ACLs & VLANs ..... OK",
+      "> deploying web stack ........ OK",
+      "> AI agent online · secure channel established",
+    ],
   },
   experience,
   education,
@@ -407,6 +427,8 @@ export const sections: Section[] = [
       { key: "fxScrollProgress", label: "Reading-progress bar", type: "bool", group: "Motion & effects" },
       { key: "fxAmbient", label: "Ambient drifting background glow", type: "bool", group: "Motion & effects" },
       { key: "fxHeaderMotion", label: "Animated page-header backgrounds", type: "bool", group: "Motion & effects" },
+      { key: "defaultTheme", label: "Default theme for new visitors", type: "select", options: ["dark", "light", "jarvis"], group: "Motion & effects" },
+      { key: "themeSwitcher", label: "Show the Dark / Light / Jarvis theme button in the menu bar", type: "bool", group: "Motion & effects" },
       { key: "fxCalm", label: "Calm mode — turn off decorative animation site-wide", type: "bool", group: "Motion & effects" },
       { key: "seoDescription", label: "Search description (leave empty for default)", type: "textarea", group: "Search & footer" },
       { key: "seoKeywords", label: "Search keywords (comma-separated)", type: "csv", group: "Search & footer" },
@@ -485,6 +507,13 @@ export const sections: Section[] = [
       { key: "interests", label: "Cybersecurity interests", type: "items", columns: [{ key: "title", label: "Title", kind: "text" }, { key: "body", label: "Description", kind: "text", wide: true }], addLabel: "Add interest", group: "Interests & goals" },
       { key: "objectives", label: "Future objectives (one per line)", type: "lines", group: "Interests & goals" },
       { key: "ctaTitle", label: "“Open to opportunities” heading", type: "text", group: "Call to action" }, { key: "ctaText", label: "“Open to opportunities” text", type: "textarea", group: "Call to action" },
+      { key: "ctaPillars", label: "Focus areas (one per line: Title|short description)", type: "lines", group: "Call to action" },
+      { key: "ctaLog", label: "Terminal lines (one per line)", type: "lines", group: "Call to action" },
+      { key: "ctaAccent", label: "Highlighted AI line under the heading", type: "text", group: "Call to action — AI control" },
+      { key: "ctaAiTitle", label: "AI panel title", type: "text", group: "Call to action — AI control" },
+      { key: "ctaAiText", label: "AI panel text", type: "textarea", group: "Call to action — AI control" },
+      { key: "ctaAiSteps", label: "AI control loop (one per line: Step|description)", type: "lines", group: "Call to action — AI control" },
+      { key: "ctaAiGuards", label: "AI guard-rails (one per line)", type: "lines", group: "Call to action — AI control" },
     ],
   },
   {
@@ -520,7 +549,7 @@ export const sections: Section[] = [
     key: "skills", label: "Skills", page: "Skills · Home · Resume", kind: "list", titleKey: "title", nav: "Career", icon: "Cpu",
     blank: () => ({ id: `group-${Date.now()}`, title: "New skill group", blurb: "", icon: "Code2", skills: [] }),
     fields: [
-      { key: "title", label: "Group title", type: "text" }, { key: "icon", label: "Icon", type: "select", options: ["Code2", "Database", "RadioTower", "Network", "Server", "Briefcase", "ShieldCheck", "Languages"] },
+      { key: "title", label: "Group title", type: "text" }, { key: "icon", label: "Icon", type: "select", options: ["Code2", "Database", "RadioTower", "Network", "Server", "Briefcase", "ShieldCheck", "Languages", "Bot", "Cloud", "Terminal", "Kanban"] },
       { key: "blurb", label: "Description", type: "textarea" },
       { key: "skills", label: "Skills", type: "items", addLabel: "Add skill", help: "Evidence: professional = done in a job · certified = backed by a certificate · working / academic / developing.",
         columns: [{ key: "name", label: "Skill", kind: "text", wide: true }, { key: "evidence", label: "Evidence", kind: "select", options: evidenceLevels }, { key: "note", label: "Note (optional)", kind: "text", wide: true }] },

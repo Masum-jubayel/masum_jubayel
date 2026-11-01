@@ -15,7 +15,8 @@ export type ContactInput = z.input<typeof contactSchema>;
 export const commentSchema = z.object({
   postSlug: z.string().regex(/^[a-z0-9-]{1,120}$/, "Invalid post."),
   parentId: z.string().uuid().nullable().optional(),
-  authorName: z.string().transform(clean).pipe(z.string().min(2, "Display name must be at least 2 characters.").max(60, "Display name is too long.")),
+  /** Only used the first time, when the account has no display name yet — afterwards the name comes from the database. */
+  authorName: z.string().transform(clean).pipe(z.string().max(60, "Display name is too long.")).optional(),
   body: z.string().transform(clean).pipe(z.string().min(2, "Comment is too short.").max(2000, "Comments are limited to 2,000 characters.")),
   website: z.string().optional(),
 });
@@ -49,3 +50,7 @@ export function fieldErrors(err: z.ZodError) {
   for (const i of err.issues) out[String(i.path[0] ?? "form")] ||= i.message;
   return out;
 }
+
+export const displayNameSchema = z.object({
+  displayName: z.string().transform(clean).pipe(z.string().min(2, "Display name must be at least 2 characters.").max(60, "Display name is too long.")),
+});

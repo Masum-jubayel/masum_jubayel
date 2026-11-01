@@ -8,6 +8,8 @@ export type CommentDTO = {
   deleted: boolean;
   status: "visible" | "pending" | "hidden";
   mine: boolean;
+  /** Written by the site owner (an admin account). */
+  isAuthor: boolean;
 };
 
 /** Maps Postgres trigger exceptions to friendly messages. */

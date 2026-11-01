@@ -1,23 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Flag, Loader2, LogOut, MessageSquare, Pencil, Reply, Trash2, TriangleAlert } from "lucide-react";
+import { BadgeCheck, LogOut, MessageSquare, TriangleAlert } from "lucide-react";
 import type { CommentDTO } from "@/lib/comments";
 import { SignInForm } from "./SignInForm";
 import { LikeButton } from "./LikeButton";
+import { InlineComposer, MentionText, MoreReplies, SocialComment, actionBtn } from "./SocialThread";
 import { fetchLikes, type LikeState } from "@/lib/likes-client";
 import { cn } from "@/lib/utils";
 
 type Me = { email?: string; displayName: string; isAdmin: boolean } | null;
 type Notice = { kind: "ok" | "error"; text: string } | null;
-
-const timeAgo = (iso: string) => {
-  const s = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return new Date(iso).toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" });
-};
 
 async function api(url: string, init?: RequestInit) {
   const res = await fetch(url, { ...init, headers: { "Content-Type": "application/json" } });
@@ -26,139 +19,97 @@ async function api(url: string, init?: RequestInit) {
   return data;
 }
 
-function Composer({ slug, parentId, me, onDone, onCancel, autoFocus }: { slug: string; parentId?: string; me: NonNullable<Me>; onDone: (n: Notice) => void; onCancel?: () => void; autoFocus?: boolean }) {
-  const [name, setName] = useState(me.displayName);
-  const [body, setBody] = useState("");
+const SHOW_REPLIES = 2;
+
+/** Readers pick a display name once; it is saved to their profile in the database and used on every comment. */
+function NameSetup({ initial = "", onSaved, onCancel }: { initial?: string; onSaved: (name: string) => void; onCancel?: () => void }) {
+  const [name, setName] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setErr("");
-    if (name.trim().length < 2) return setErr("Please add a display name (2+ characters).");
-    if (body.trim().length < 2) return setErr("Comment is too short.");
-    setBusy(true);
-    try {
-      const data = await api("/api/comments", { method: "POST", body: JSON.stringify({ postSlug: slug, parentId: parentId ?? null, authorName: name, body, website: "" }) });
-      setBody("");
-      onDone({ kind: "ok", text: data.status === "pending" ? "Thanks! Your comment is awaiting moderation." : "Comment posted." });
-    } catch (e) {
-      setErr((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const id = parentId ? `reply-${parentId}` : "new-comment";
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault(); setErr(""); setBusy(true);
+    try { const r = await api("/api/profile", { method: "PATCH", body: JSON.stringify({ displayName: name }) }); onSaved(r.displayName); }
+    catch (x) { setErr((x as Error).message); } finally { setBusy(false); }
+  };
   return (
-    <form onSubmit={submit} className="space-y-3" noValidate>
-      {!parentId && (
-        <div>
-          <label htmlFor={`${id}-name`} className="label">Display name</label>
-          <input id={`${id}-name`} value={name} onChange={(e) => setName(e.target.value)} maxLength={60} className="input max-w-xs" autoComplete="nickname" />
-        </div>
-      )}
-      <div>
-        <label htmlFor={`${id}-body`} className={parentId ? "sr-only" : "label"}>{parentId ? "Reply" : "Comment"}</label>
-        <textarea id={`${id}-body`} value={body} onChange={(e) => setBody(e.target.value)} rows={parentId ? 3 : 4} maxLength={2000} autoFocus={autoFocus} className="input resize-y" placeholder={parentId ? "Write a reply…" : "Share a thought, question or correction…"} aria-invalid={!!err} aria-describedby={err ? `${id}-err` : undefined} />
-        <div className="mt-1 flex justify-between text-[11px] text-mist-500">
-          <span>Plain text. Be respectful.</span>
-          <span>{body.length}/2000</span>
-        </div>
+    <form onSubmit={save} className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+      <label htmlFor="display-name" className="text-sm text-mist-200">Your display name <span className="text-mist-500">— shown on all your comments and replies</span></label>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <input id="display-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} className="input max-w-xs py-2 text-sm" placeholder="e.g. Alex Chen" autoComplete="name" />
+        <button className="btn-primary py-2 text-sm" disabled={busy || name.trim().length < 2}>Save name</button>
+        {onCancel && <button type="button" className="btn-ghost py-2 text-sm" onClick={onCancel}>Cancel</button>}
       </div>
-      {err && <p id={`${id}-err`} role="alert" className="text-xs text-rose-300">{err}</p>}
-      <div className="flex gap-2">
-        <button className="btn-primary py-2" disabled={busy}>{busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}{parentId ? "Post reply" : "Post comment"}</button>
-        {onCancel && <button type="button" onClick={onCancel} className="btn-ghost">Cancel</button>}
-      </div>
+      {err && <p role="alert" className="mt-1 text-xs text-rose-300">{err}</p>}
     </form>
   );
 }
 
-function CommentItem({ c, slug, me, replies, refresh, notify, likes }: { c: CommentDTO; slug: string; me: Me; replies?: CommentDTO[]; refresh: () => void; notify: (n: Notice) => void; likes: LikeState | null }) {
-  const [mode, setMode] = useState<"view" | "edit" | "reply" | "report">("view");
-  const [text, setText] = useState(c.body);
-  const [busy, setBusy] = useState(false);
+/** One top-level comment with its replies and an inline reply box (social-media style). */
+function Thread({ c, replies, slug, me, refresh, notify, likes }: { c: CommentDTO; replies: CommentDTO[]; slug: string; me: Me; refresh: () => void; notify: (n: Notice) => void; likes: LikeState | null }) {
+  const [replyTo, setReplyTo] = useState<CommentDTO | null>(null);
+  const [open, setOpen] = useState(false);
+  const hidden = Math.max(0, replies.length - SHOW_REPLIES);
+  const shown = open ? replies : replies.slice(-SHOW_REPLIES);
 
-  const run = async (fn: () => Promise<unknown>, okText?: string) => {
-    setBusy(true);
-    try { const r = (await fn()) as { message?: string }; notify({ kind: "ok", text: r?.message || okText || "Done." }); setMode("view"); refresh(); }
-    catch (e) { notify({ kind: "error", text: (e as Error).message }); }
-    finally { setBusy(false); }
+  const post = async (text: string) => {
+    const data = await api("/api/comments", { method: "POST", body: JSON.stringify({ postSlug: slug, parentId: c.id, body: text, website: "" }) });
+    setReplyTo(null); setOpen(true);
+    notify(data.status === "pending" ? { kind: "ok", text: "Thanks! Your reply is awaiting moderation." } : null);
+    refresh();
   };
 
   return (
-    <li className="relative">
-      <article className={cn("rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4", c.status !== "visible" && "border-amber-300/30")} aria-label={c.deleted ? "Deleted comment" : `Comment by ${c.authorName}`}>
-        {c.deleted ? (
-          <p className="text-sm italic text-mist-500">[comment deleted]</p>
-        ) : (
-          <>
-            <header className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-cyan-400/40 to-violet-500/40 font-mono text-[11px] text-mist-100" aria-hidden>{c.authorName.slice(0, 1).toUpperCase()}</span>
-              <span className="text-sm font-medium text-mist-100">{c.authorName}</span>
-              <time dateTime={c.createdAt} className="font-mono text-[11px] text-mist-500">{timeAgo(c.createdAt)}{c.editedAt && " · edited"}</time>
-              {c.status !== "visible" && <span className="chip border-amber-300/40 py-0 text-[10px] text-amber-300">{c.status === "pending" ? "Awaiting moderation" : "Hidden"}</span>}
-            </header>
-            {mode === "edit" ? (
-              <div className="mt-3 space-y-2">
-                <label htmlFor={`edit-${c.id}`} className="sr-only">Edit comment</label>
-                <textarea id={`edit-${c.id}`} value={text} onChange={(e) => setText(e.target.value)} rows={3} maxLength={2000} className="input" />
-                <div className="flex gap-2">
-                  <button className="btn-primary py-1.5 text-xs" disabled={busy} onClick={() => run(() => api(`/api/comments/${c.id}`, { method: "PATCH", body: JSON.stringify({ body: text }) }), "Comment updated.")}>Save</button>
-                  <button className="btn-ghost text-xs" onClick={() => { setText(c.body); setMode("view"); }}>Cancel</button>
-                </div>
-              </div>
-            ) : (
-              // Rendered as plain text — React escapes it; no HTML is ever injected.
-              <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-mist-200">{c.body}</p>
-            )}
-            <div className="mt-3 flex flex-wrap items-center gap-1">
-              {likes?.configured && c.status === "visible" && <LikeButton type="comment" id={c.id} size="sm" initial={{ count: likes.counts[c.id] ?? 0, liked: likes.mine.includes(c.id) }} />}
-              {me && !c.parentId && <button onClick={() => setMode(mode === "reply" ? "view" : "reply")} className="btn-ghost px-2 py-1 text-xs"><Reply className="h-3.5 w-3.5" aria-hidden /> Reply</button>}
-              {c.mine && mode !== "edit" && <button onClick={() => setMode("edit")} className="btn-ghost px-2 py-1 text-xs"><Pencil className="h-3.5 w-3.5" aria-hidden /> Edit</button>}
-              {c.mine && (
-                <button
-                  onClick={() => { if (window.confirm("Delete this comment?")) run(() => api(`/api/comments/${c.id}`, { method: "DELETE" }), "Comment deleted."); }}
-                  className="btn-ghost px-2 py-1 text-xs hover:text-rose-300"
-                  disabled={busy}
-                >
-                  <Trash2 className="h-3.5 w-3.5" aria-hidden /> Delete
-                </button>
-              )}
-              {me && !c.mine && <button onClick={() => setMode(mode === "report" ? "view" : "report")} className="btn-ghost px-2 py-1 text-xs"><Flag className="h-3.5 w-3.5" aria-hidden /> Report</button>}
-            </div>
-            {mode === "report" && (
-              <ReportForm busy={busy} onCancel={() => setMode("view")} onSubmit={(reason) => run(() => api(`/api/comments/${c.id}/report`, { method: "POST", body: JSON.stringify({ reason }) }))} />
-            )}
-          </>
-        )}
-      </article>
-      {mode === "reply" && me && (
-        <div className="ml-6 mt-3 border-l border-white/10 pl-4 sm:ml-10">
-          <Composer slug={slug} parentId={c.id} me={me} autoFocus onCancel={() => setMode("view")} onDone={(n) => { notify(n); setMode("view"); refresh(); }} />
+    <li>
+      <Item c={c} me={me} likes={likes} refresh={refresh} notify={notify} onReply={() => setReplyTo(c)} />
+      {(replies.length > 0 || replyTo) && (
+        <div className="ml-[2.95rem] mt-2 space-y-3 border-l border-white/10 pl-3">
+          <MoreReplies count={hidden} open={open} onClick={() => setOpen((o) => !o)} />
+          {shown.map((r) => <Item key={r.id} c={r} me={me} likes={likes} refresh={refresh} notify={notify} small onReply={() => setReplyTo(r)} />)}
+          {replyTo && me?.displayName && (
+            <InlineComposer key={replyTo.id} size="sm" name={me.displayName} autoFocus replyingTo={replyTo.authorName}
+              initial={replyTo.id !== c.id ? `@${replyTo.authorName} ` : ""} placeholder={`Reply to ${replyTo.authorName}…`}
+              onCancel={() => setReplyTo(null)} onSubmit={post} />
+          )}
         </div>
-      )}
-      {replies && replies.length > 0 && (
-        <ul className="ml-6 mt-3 space-y-3 border-l border-white/10 pl-4 sm:ml-10">
-          {replies.map((r) => <CommentItem key={r.id} c={r} slug={slug} me={me} refresh={refresh} notify={notify} likes={likes} />)}
-        </ul>
       )}
     </li>
   );
 }
 
-function ReportForm({ onSubmit, onCancel, busy }: { onSubmit: (r: string) => void; onCancel: () => void; busy: boolean }) {
-  const [reason, setReason] = useState("");
+function Item({ c, me, likes, refresh, notify, small, onReply }: { c: CommentDTO; me: Me; likes: LikeState | null; refresh: () => void; notify: (n: Notice) => void; small?: boolean; onReply: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(c.body);
+  const [busy, setBusy] = useState(false);
+  const run = async (fn: () => Promise<unknown>, ok: string) => {
+    setBusy(true);
+    try { const r = (await fn()) as { message?: string }; notify({ kind: "ok", text: r?.message || ok }); setEditing(false); refresh(); }
+    catch (e) { notify({ kind: "error", text: (e as Error).message }); }
+    finally { setBusy(false); }
+  };
+
+  if (c.deleted) return <p className="pl-12 text-sm italic text-mist-500">[comment deleted]</p>;
+
   return (
-    <div className="mt-3 space-y-2 rounded-xl border border-white/10 p-3">
-      <label className="label" htmlFor="report-reason">Why are you reporting this comment?</label>
-      <input id="report-reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} className="input py-2" placeholder="Spam, abuse, off-topic…" />
-      <div className="flex gap-2">
-        <button className="btn-secondary py-1.5 text-xs" disabled={busy || reason.trim().length < 3} onClick={() => onSubmit(reason)}>Send report</button>
-        <button className="btn-ghost text-xs" onClick={onCancel}>Cancel</button>
-      </div>
-    </div>
+    <SocialComment
+      name={c.authorName} at={c.createdAt} size={small ? "sm" : "md"} highlight={c.mine}
+      badge={c.isAuthor ? <span className="inline-flex items-center gap-1 rounded-full bg-cyan-400/15 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wider text-cyan-200"><BadgeCheck className="h-3 w-3" aria-hidden />Author</span> : c.status !== "visible" ? <span className="rounded-full border border-amber-300/40 px-1.5 text-[10px] font-medium text-amber-300">{c.status === "pending" ? "Awaiting moderation" : "Hidden"}</span> : c.editedAt ? <span className="text-[10px] font-normal text-mist-500">edited</span> : null}
+      body={editing ? (
+        <span className="mt-1 block space-y-2">
+          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} maxLength={2000} className="input text-sm" aria-label="Edit comment" />
+          <span className="flex gap-2">
+            <button className="btn-primary py-1 text-xs" disabled={busy} onClick={() => run(() => api(`/api/comments/${c.id}`, { method: "PATCH", body: JSON.stringify({ body: text }) }), "Comment updated.")}>Save</button>
+            <button className="btn-ghost py-1 text-xs" onClick={() => { setText(c.body); setEditing(false); }}>Cancel</button>
+          </span>
+        </span>
+      ) : <MentionText text={c.body} />}
+      actions={<>
+        {likes?.configured && c.status === "visible" && <LikeButton bare type="comment" id={c.id} initial={{ count: likes.counts[c.id] ?? 0, liked: likes.mine.includes(c.id) }} />}
+        {me?.displayName && c.status === "visible" && <button className={actionBtn} onClick={onReply}>Reply</button>}
+        {c.mine && !editing && <button className={actionBtn} onClick={() => setEditing(true)}>Edit</button>}
+        {c.mine && <button className={cn(actionBtn, "hover:text-rose-300")} disabled={busy} onClick={() => { if (window.confirm("Delete this comment?")) run(() => api(`/api/comments/${c.id}`, { method: "DELETE" }), "Comment deleted."); }}>Delete</button>}
+        {me && !c.mine && <button className={actionBtn} onClick={() => { const reason = window.prompt("Why are you reporting this comment? (spam, abuse, off-topic…)"); if (reason && reason.trim().length >= 3) run(() => api(`/api/comments/${c.id}/report`, { method: "POST", body: JSON.stringify({ reason }) }), "Thanks — a moderator will review it."); }}>Report</button>}
+      </>}
+    />
   );
 }
 
@@ -166,6 +117,7 @@ export function Comments({ slug, title = "Discussion", compact = false }: { slug
   const [state, setState] = useState<{ loading: boolean; configured: boolean; comments: CommentDTO[]; me: Me; error: string }>({ loading: true, configured: true, comments: [], me: null, error: "" });
   const [notice, setNotice] = useState<Notice>(null);
   const [likes, setLikes] = useState<LikeState | null>(null);
+  const [renaming, setRenaming] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -187,54 +139,62 @@ export function Comments({ slug, title = "Discussion", compact = false }: { slug
       if (c.parentId) byParent.set(c.parentId, [...(byParent.get(c.parentId) || []), c]);
       else roots.push(c);
     }
-    // hide deleted roots without replies
     const visibleRoots = roots.filter((r) => !r.deleted || (byParent.get(r.id)?.length ?? 0) > 0);
     return { roots: visibleRoots, byParent, count: state.comments.filter((c) => !c.deleted).length };
   }, [state.comments]);
 
+  const postRoot = async (text: string) => {
+    const data = await api("/api/comments", { method: "POST", body: JSON.stringify({ postSlug: slug, parentId: null, body: text, website: "" }) });
+    if (data.status === "pending") setNotice({ kind: "ok", text: "Thanks! Your comment is awaiting moderation." });
+    load();
+  };
+
+  const headingId = compact ? `comments-${slug}` : "comments-title";
   return (
-    <section aria-labelledby={compact ? `comments-${slug}` : "comments-title"} className={compact ? "pt-2" : "mt-16 border-t border-white/[0.06] pt-10"}>
+    <section aria-labelledby={headingId} className={compact ? "pt-1" : "mt-16 border-t border-white/[0.06] pt-10"}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id={compact ? `comments-${slug}` : "comments-title"} className={cn("flex items-center gap-2 font-semibold", compact ? "text-base" : "text-2xl")}><MessageSquare className="h-5 w-5 text-cyan-300" aria-hidden /> {title} {state.configured && !state.loading && <span className="font-mono text-sm text-mist-500">({count})</span>}</h2>
+        <h2 id={headingId} className={cn("flex items-center gap-2 font-semibold", compact ? "text-base" : "text-2xl")}>
+          <MessageSquare className="h-5 w-5 text-cyan-300" aria-hidden /> {title}
+          {state.configured && !state.loading && <span className="font-mono text-sm text-mist-500">({count})</span>}
+        </h2>
         {state.me && (
-          <form action="/auth/signout" method="post" className="flex items-center gap-3 text-xs text-mist-400">
-            <span>Signed in as {state.me.email}</span>
+          <form action="/auth/signout" method="post" className="flex items-center gap-2 text-xs text-mist-400">
+            {state.me.displayName && <span className="hidden sm:inline">Commenting as <b className="text-mist-200">{state.me.displayName}</b>{!state.me.isAdmin && <> · <button type="button" className="underline-offset-2 hover:underline" onClick={() => setRenaming(true)}>change</button></>}</span>}
             <button className="btn-ghost px-2 py-1 text-xs"><LogOut className="h-3.5 w-3.5" aria-hidden /> Sign out</button>
           </form>
         )}
       </div>
 
-      <div aria-live="polite" className="mt-4">
-        {notice && <p className={cn("rounded-xl border p-3 text-sm", notice.kind === "ok" ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-200" : "border-rose-400/30 bg-rose-500/10 text-rose-200")}>{notice.text}</p>}
+      <div aria-live="polite">
+        {notice && <p className={cn("mt-3 rounded-xl border p-3 text-sm", notice.kind === "ok" ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-200" : "border-rose-400/30 bg-rose-500/10 text-rose-200")}>{notice.text}</p>}
       </div>
 
       {state.loading ? (
-        <div className="mt-6 space-y-3" aria-busy="true" aria-label="Loading comments">
-          {[0, 1].map((i) => <div key={i} className="h-20 animate-pulse rounded-2xl bg-white/[0.03]" />)}
+        <div className="mt-5 space-y-3" aria-busy="true" aria-label="Loading comments">
+          {[0, 1].map((i) => <div key={i} className="flex gap-2.5"><div className="h-9 w-9 animate-pulse rounded-full bg-white/[0.05]" /><div className="h-14 flex-1 animate-pulse rounded-2xl bg-white/[0.04]" /></div>)}
         </div>
       ) : !state.configured ? (
-        <p className="glass mt-6 p-5 text-sm text-mist-400">Comments will appear here once the site’s Supabase backend is connected.</p>
+        <p className="mt-5 text-sm text-mist-400">Comments open as soon as the site’s database is connected.</p>
       ) : state.error ? (
-        <p className="mt-6 flex items-center gap-2 text-sm text-rose-300"><TriangleAlert className="h-4 w-4" aria-hidden /> {state.error} <button onClick={load} className="underline">Retry</button></p>
+        <p className="mt-5 flex items-center gap-2 text-sm text-rose-300"><TriangleAlert className="h-4 w-4" aria-hidden /> {state.error} <button onClick={load} className="underline">Retry</button></p>
       ) : (
         <>
-          <div className="glass mt-6 p-5">
-            {state.me ? (
-              <Composer slug={slug} me={state.me} onDone={(n) => { setNotice(n); load(); }} />
+          <ul className="mt-5 space-y-5">
+            {roots.map((c) => <Thread key={c.id} c={c} replies={byParent.get(c.id) || []} slug={slug} me={state.me} refresh={load} notify={setNotice} likes={likes} />)}
+          </ul>
+          {roots.length === 0 && <p className="mt-4 text-sm text-mist-500">No comments yet — be the first to say something.</p>}
+          <div className="mt-5 border-t border-white/[0.06] pt-4">
+            {state.me && (!state.me.displayName || renaming) ? (
+              <NameSetup initial={state.me.displayName} onCancel={renaming ? () => setRenaming(false) : undefined} onSaved={() => { setRenaming(false); load(); }} />
+            ) : state.me ? (
+              <InlineComposer name={state.me.displayName} placeholder="Write a comment…" onSubmit={postRoot} footer="Enter to post · Shift+Enter for a new line" />
             ) : (
-              <div>
-                <p className="mb-3 text-sm text-mist-300">Sign in with a verified email to join the discussion. Reading is open to everyone.</p>
-                <SignInForm next={typeof window !== "undefined" ? window.location.pathname + "#comments-title" : "/blog"} compact />
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                <p className="mb-3 text-sm text-mist-300">Sign in with your email to like, comment and reply.</p>
+                <SignInForm next={typeof window !== "undefined" ? window.location.pathname + `#${headingId}` : "/blog"} compact />
               </div>
             )}
           </div>
-          {roots.length === 0 ? (
-            <p className="mt-8 text-center text-sm text-mist-500">No comments yet — start the conversation.</p>
-          ) : (
-            <ul className="mt-8 space-y-4">
-              {roots.map((c) => <CommentItem key={c.id} c={c} slug={slug} me={state.me} replies={byParent.get(c.id)} refresh={load} notify={setNotice} likes={likes} />)}
-            </ul>
-          )}
         </>
       )}
     </section>

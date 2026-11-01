@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  * Heart button with a burst animation. Pass `initial` when counts were already fetched in bulk
  * (comments); otherwise it loads its own count (post page).
  */
-export function LikeButton({ type, id, initial, size = "md", label }: { type: LikeType; id: string; initial?: { count: number; liked: boolean } | null; size?: "sm" | "md" | "lg"; label?: string }) {
+export function LikeButton({ type, id, initial, size = "md", label, bare = false }: { type: LikeType; id: string; initial?: { count: number; liked: boolean } | null; size?: "sm" | "md" | "lg"; label?: string; bare?: boolean }) {
   const [count, setCount] = useState(initial?.count ?? 0);
   const [liked, setLiked] = useState(initial?.liked ?? false);
   const [ready, setReady] = useState(Boolean(initial));
@@ -44,6 +44,16 @@ export function LikeButton({ type, id, initial, size = "md", label }: { type: Li
   };
 
   const icon = size === "sm" ? "h-3.5 w-3.5" : size === "lg" ? "h-6 w-6" : "h-4 w-4";
+  if (bare) return (
+    <button type="button" onClick={click} disabled={!ready && !initial} aria-pressed={liked}
+      aria-label={`${liked ? "Unlike" : "Like"} this ${type}${count ? ` (${count} likes)` : ""}`}
+      className={cn("inline-flex items-center gap-1 transition", liked ? "text-rose-300" : "hover:text-rose-300", !ready && !initial && "opacity-60")}>
+      <motion.span key={burst} initial={burst ? { scale: 0.6 } : false} animate={{ scale: [0.6, 1.35, 1] }} transition={{ duration: 0.45 }} className="inline-flex">
+        <Heart className={cn("h-3.5 w-3.5", liked && "fill-current")} aria-hidden />
+      </motion.span>
+      {liked ? "Liked" : "Like"}{count > 0 && <span className="tabular-nums text-mist-500">· {count}</span>}
+    </button>
+  );
   return (
     <button
       type="button" onClick={click} disabled={!ready && !initial} aria-pressed={liked}

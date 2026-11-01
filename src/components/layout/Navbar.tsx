@@ -1,5 +1,6 @@
 "use client";
 
+import { ThemeToggle, type ThemeName } from "@/components/layout/ThemeToggle";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -87,6 +88,7 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {layout.themeSwitcher && <ThemeToggle fallback={(layout.defaultTheme as ThemeName) || "dark"} />}
           {layout.navResumeButton && (
             <Link href="/resume" className="btn-secondary hidden py-2 text-xs md:inline-flex">
               <FileText className="h-3.5 w-3.5" aria-hidden /> Resume
