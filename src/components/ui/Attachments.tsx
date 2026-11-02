@@ -7,6 +7,7 @@ import { PdfButton } from "@/components/ui/PdfButton";
 import { ProofThumb } from "@/components/ui/ProofThumb";
 import { fileNameFromUrl, kindLabel, mediaKind, type Attachment, type MediaKind } from "@/lib/media";
 import { LookVideo } from "@/components/ui/LookMedia";
+import { downloadProps } from "@/lib/download";
 
 const icons: Record<MediaKind, LucideIcon> = { image: ImageIcon, video: Film, audio: FileAudio, pdf: FileText, doc: FileType2, sheet: FileSpreadsheet, slides: Presentation, archive: Archive, text: FileText, other: Paperclip };
 const hues: Record<MediaKind, string> = { image: "#22ff88", video: "#fbbf24", audio: "#f472b6", pdf: "#f87171", doc: "#4f8cff", sheet: "#34d399", slides: "#fb923c", archive: "#a78bfa", text: "#94a3b8", other: "#3ee6ff" };
@@ -56,7 +57,7 @@ export function Attachments({ items, title = "Files & media" }: { items: Attachm
             return (
               <motion.li key={url + i} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
                 {k === "pdf" ? (
-                  <PdfButton src={url} label={name} className="glass glass-hover flex w-full items-center gap-3 p-3 text-left">{card}<span className="font-mono text-[10px] uppercase tracking-widest text-cyan-300">Open</span></PdfButton>
+                  <PdfButton src={url} label={name} fileName={name} className="glass glass-hover flex w-full items-center gap-3 p-3 text-left">{card}<span className="font-mono text-[10px] uppercase tracking-widest text-cyan-300">Open</span></PdfButton>
                 ) : k === "audio" ? (
                   <div className="glass p-3"><div className="flex items-center gap-3">{card}</div><audio src={url} controls className="mt-2 w-full" /></div>
                 ) : (
@@ -64,7 +65,7 @@ export function Attachments({ items, title = "Files & media" }: { items: Attachm
                     {card}
                     <span className="flex shrink-0 gap-1">
                       {office && <a href={`https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer" className="btn-ghost px-2 py-1 text-xs" title="View online"><ExternalLink className="h-3.5 w-3.5" aria-hidden /> View</a>}
-                      <a href={url} download className="btn-ghost px-2 py-1 text-xs" title="Download"><Download className="h-3.5 w-3.5" aria-hidden /></a>
+                      <a {...downloadProps(url, name)} className="btn-ghost px-2 py-1 text-xs" title="Download"><Download className="h-3.5 w-3.5" aria-hidden /></a>
                     </span>
                   </div>
                 )}

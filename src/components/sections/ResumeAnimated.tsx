@@ -13,6 +13,7 @@ import { formatMonth, type Job } from "@/content/profile";
 import { evidenceMeta, type SkillGroup } from "@/content/skills";
 import { defaultResume, type Education, type ResumeInfo, type SiteInfo } from "@/content/cms";
 import { monthCount, tenure } from "./ExperienceTimeline";
+import { downloadProps } from "@/lib/download";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const HUES = ["#3ee6ff", "#a78bfa", "#22ff88", "#fbbf24", "#f472b6", "#4f8cff", "#38bdf8"];
@@ -44,7 +45,7 @@ export function ResumePaper({ name, title, src, labels = defaultResume.chips, fi
                 initial={reduce ? false : { width: 0 }} animate={{ width: `${w}%` }} transition={{ delay: 0.5 + i * 0.12, duration: 0.6, ease }} />
             ))}
           </div>
-          <a href={src} download={fileName} className="btn-primary mt-5 w-full justify-center py-2 text-xs"><Download className="h-3.5 w-3.5" aria-hidden /> Download PDF</a>
+          <a {...downloadProps(src, fileName)} className="btn-primary mt-5 w-full justify-center py-2 text-xs"><Download className="h-3.5 w-3.5" aria-hidden /> Download PDF</a>
         </div>
         {chips.map(([label, hue, pos], i) => (
           <motion.span key={label} aria-hidden className={`absolute ${pos} z-10 hidden rounded-full border bg-ink-950/90 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider backdrop-blur sm:block`}

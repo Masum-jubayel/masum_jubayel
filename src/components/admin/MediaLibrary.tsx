@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Copy, Download, ExternalLink, FileText, Film, Image as ImageIcon, Loader2, Paperclip, RefreshCw, Search, Trash2, UploadCloud } from "lucide-react";
 import { kindLabel, mediaKind, type MediaKind } from "@/lib/media";
 import { cn } from "@/lib/utils";
+import { downloadProps } from "@/lib/download";
 
 export type MediaFile = { bucket: string; path: string; name: string; url: string; size: number; created: string };
 export type MediaActions = {
@@ -89,7 +90,7 @@ export function MediaLibrary({ actions }: { actions: MediaActions }) {
                   <div className="mt-1.5 flex gap-1">
                     <button type="button" className="btn-ghost px-1.5 py-1" title="Copy link" onClick={async () => { try { await navigator.clipboard.writeText(x.url); setCopied(x.url); setTimeout(() => setCopied(""), 1500); } catch { /* ignore */ } }}>{copied === x.url ? <Check className="h-3.5 w-3.5 text-emerald-300" aria-hidden /> : <Copy className="h-3.5 w-3.5" aria-hidden />}</button>
                     <a className="btn-ghost px-1.5 py-1" href={x.url} target="_blank" rel="noopener noreferrer" title="Open"><ExternalLink className="h-3.5 w-3.5" aria-hidden /></a>
-                    <a className="btn-ghost px-1.5 py-1" href={x.url} download title="Download"><Download className="h-3.5 w-3.5" aria-hidden /></a>
+                    <a className="btn-ghost px-1.5 py-1" {...downloadProps(x.url, x.name)} title="Download"><Download className="h-3.5 w-3.5" aria-hidden /></a>
                     <button type="button" className="btn-ghost ml-auto px-1.5 py-1 hover:text-rose-300" title="Delete" onClick={async () => { if (!confirm(`Delete ${x.name}? Pages still using it will show a broken link.`)) return; await actions.remove(x.bucket, x.path); load(); }}><Trash2 className="h-3.5 w-3.5" aria-hidden /></button>
                   </div>
                 </div>

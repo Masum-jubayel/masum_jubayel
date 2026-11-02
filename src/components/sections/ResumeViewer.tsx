@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { Download, Eye, FileText, LayoutList } from "lucide-react";
 import { PdfViewer } from "./PdfViewer";
 import { cn } from "@/lib/utils";
+import { downloadProps } from "@/lib/download";
 
 /** Online resume + original PDF (rendered on the page) + full-screen reader with download. */
 export function ResumeViewer({ src, online, updated, initial = "online", fileName = "Masum_Mohammad_Jubayel_Resume.pdf" }: { src: string; online: ReactNode; updated?: string; initial?: string; fileName?: string }) {
@@ -38,7 +39,7 @@ export function ResumeViewer({ src, online, updated, initial = "online", fileNam
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {updated && <span className="font-mono text-[10px] uppercase tracking-widest text-mist-500">Updated {updated}</span>}
           <button type="button" onClick={() => setFull(true)} className="btn-secondary py-2 text-sm"><Eye className="h-4 w-4" aria-hidden /> Open PDF</button>
-          <a href={src} download={fileName} className="btn-primary py-2 text-sm"><Download className="h-4 w-4" aria-hidden /> Download</a>
+          <a {...downloadProps(src, fileName)} className="btn-primary py-2 text-sm"><Download className="h-4 w-4" aria-hidden /> Download</a>
         </div>
       </div>
       <AnimatePresence mode="wait">

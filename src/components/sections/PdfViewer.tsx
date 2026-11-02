@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Download, Loader2, Minus, Plus, X } from "lucide-react";
+import { downloadProps } from "@/lib/download";
 
 const WORKER = "/vendor/pdf.worker.min.mjs";
 
@@ -60,7 +61,7 @@ export function PdfViewer({ src, fileName = "Masum_Mohammad_Jubayel_Resume.pdf",
           <button type="button" onClick={() => setZoom((z) => Math.max(0.6, +(z - 0.2).toFixed(1)))} className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-mist-300 hover:text-mist-100" aria-label="Zoom out"><Minus className="h-4 w-4" /></button>
           <span className="w-12 text-center font-mono text-xs text-mist-400">{Math.round(zoom * 100)}%</span>
           <button type="button" onClick={() => setZoom((z) => Math.min(2, +(z + 0.2).toFixed(1)))} className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-mist-300 hover:text-mist-100" aria-label="Zoom in"><Plus className="h-4 w-4" /></button>
-          <a href={src} download={fileName} className="btn-primary py-2 text-xs"><Download className="h-4 w-4" aria-hidden /> Download</a>
+          <a {...downloadProps(src, fileName)} className="btn-primary py-2 text-xs"><Download className="h-4 w-4" aria-hidden /> Download</a>
           {onClose && <button type="button" onClick={onClose} className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-mist-100" aria-label="Close PDF"><X className="h-4 w-4" /></button>}
         </div>
       </div>
